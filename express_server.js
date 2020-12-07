@@ -24,6 +24,11 @@ app.get("/hello", (require, response) => {
 app.get("/urls", (require, response) => {
   const templateVars = { urls: urlDatabase };
   response.render("urls_index", templateVars);
+
+  app.get("/urls/:shortURL", (req, res) => {
+    const templateVars = { shortURL: req.params.shortURL, longURL: req.params.longURL };
+    res.render("urls_show", templateVars);
+  });
 });
 
 app.listen(PORT, () => {
