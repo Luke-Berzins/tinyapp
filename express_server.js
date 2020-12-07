@@ -17,8 +17,13 @@ app.get("/urls.json", (require, response) => {
   response.json(urlDatabase);
 })
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
+app.get("/hello", (require, response) => {
+  response.send("<html><body>Hello <b>World</b></body></html>\n");
+});
+
+app.get("/urls", (require, response) => {
+  const templateVars = { urls: urlDatabase };
+  response.render("urls_index", templateVars);
 });
 
 app.listen(PORT, () => {
