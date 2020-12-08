@@ -9,16 +9,16 @@ const urlDatabase = {
 
 
 
-app.set("view engine", "ejs")
+app.set("view engine", "ejs");
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
 const generateRandomString = () => {
-  const string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-  let result = ''
+  const string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  let result = '';
   while (result.length < 6) {
-    result += string[Math.floor((Math.random() * 61))]
+    result += string[Math.floor((Math.random() * 61))];
   }
   return result;
 };
@@ -30,7 +30,7 @@ app.get(`/`, (require, response) => {
 
 app.get("/urls.json", (require, response) => {
   response.json(urlDatabase);
-})
+});
 
 app.get("/hello", (require, response) => {
   response.send("<html><body>Hello <b>World</b></body></html>\n");
@@ -51,16 +51,23 @@ app.get("/urls", (require, response) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL]
+  const longURL = urlDatabase[req.params.shortURL];
   res.redirect(longURL);
 });
 
-app.post("/urls", (req, res) => {  
-  let shortened = generateRandomString()
-  urlDatabase[shortened] = req.body.longURL; 
-  res.redirect(`urls/${shortened}`);         
+app.post("/urls", (req, res) => {
+  for (let key in urlDatabase) {
+    if (urlDatabase[key] === req.body.longURL) {
+      res.redirect(`urls/${key}`);
+      return;
+    }
+  }
+  let shortened = generateRandomString();
+  urlDatabase[shortened] = req.body.longURL;
+  res.redirect(`urls/${shortened}`);
+    
 });
 
 app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}`)
+  console.log(`App listening on port ${PORT}`);
 });
