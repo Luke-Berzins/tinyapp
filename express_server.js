@@ -14,6 +14,14 @@ app.set("view engine", "ejs")
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
 
+const generateRandomString = () => {
+  const string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+  let result = ''
+  while (result.length < 6) {
+    result += string[Math.floor((Math.random() * 61))]
+  }
+  return result;
+}
 
 
 app.get(`/`, (require, response) => {
