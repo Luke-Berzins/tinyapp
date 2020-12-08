@@ -17,15 +17,15 @@ const generateRandomString = () => {
 
 const deleteTiny = (key) => {
   delete urlDatabase[key];
-}
+};
 
+const editTiny = (key, long) => {
+  urlDatabase[key] = long;
+};
 
 app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-
-
-
 
 app.get(`/`, (require, response) => {
   response.send("Hello!");
@@ -61,6 +61,11 @@ app.get("/u/:shortURL", (req, res) => {
 app.post("/urls/:shortURL/delete", (req, res) => {
   deleteTiny(req.params.shortURL);
   res.redirect(`/urls`);
+});
+
+app.post("/urls/:id/edit", (req, res) => {
+  editTiny(req.params.id, req.body.longURL);
+  res.redirect(`/urls/${req.params.id}`)
 });
 
 app.post("/urls", (req, res) => {
