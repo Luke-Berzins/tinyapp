@@ -6,14 +6,6 @@ const urlDatabase = {
   "b2xVn2" : "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
-
-
-
-app.set("view engine", "ejs");
-
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
-
 const generateRandomString = () => {
   const string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   let result = '';
@@ -22,6 +14,17 @@ const generateRandomString = () => {
   }
   return result;
 };
+
+const deleteTiny = (key) => {
+  delete urlDatabase[key];
+}
+
+
+app.set("view engine", "ejs");
+const bodyParser = require("body-parser");
+app.use(bodyParser.urlencoded({extended: true}));
+
+
 
 
 app.get(`/`, (require, response) => {
@@ -55,6 +58,11 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+app.post("/urls/:shortURL/delete", (req, res) => {
+  deleteTiny(req.params.shortURL);
+  res.redirect(`/urls`);
+});
+
 app.post("/urls", (req, res) => {
   for (let key in urlDatabase) {
     if (urlDatabase[key] === req.body.longURL) {
@@ -64,8 +72,7 @@ app.post("/urls", (req, res) => {
   }
   let shortened = generateRandomString();
   urlDatabase[shortened] = req.body.longURL;
-  res.redirect(`urls/${shortened}`);
-    
+  res.redirect(`urls/${shortened}`); 
 });
 
 app.listen(PORT, () => {
