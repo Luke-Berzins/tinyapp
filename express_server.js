@@ -50,6 +50,11 @@ app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
+app.get("/register", (req, res) => {
+  const templateVars = { username: req.cookies["username"]};
+  res.render("register_user", templateVars);
+});
+
 app.get("/urls/new", (req, res) => {
   const templateVars = { username: req.cookies["username"]}
   res.render("urls_new", templateVars);
@@ -78,14 +83,12 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 app.post(`/login`, (req, res) => {
   const named = req.body["username"];
   res.cookie( "username", named );
- 
   res.redirect(`/urls`);
 });
 app.post(`/logout`, (req, res) => {
   res.cookie( "username", '' );
   res.redirect(`/urls`);
 });
-
 
 app.post("/urls", (req, res) => {
   for (let key in urlDatabase) {
@@ -102,6 +105,11 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id/edit", (req, res) => {
   editTiny(req.params.id, req.body.longURL);
   res.redirect(`/urls/${req.params.id}`)
+});
+
+app.get('*', function(req, res){
+  const templateVars = { username: req.cookies["username"]}
+  res.render("404_page", templateVars);
 });
 
 app.listen(PORT, () => {
