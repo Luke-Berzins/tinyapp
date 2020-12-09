@@ -10,7 +10,7 @@ const PORT = 8080;
 const app = express();
 app.set("view engine", "ejs");
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser())
+app.use(cookieParser());
 
 //DATABASES
 const userDatabase = {
@@ -40,15 +40,24 @@ const editItem = (database, key, long) => {
   database[key] = long;
 };
 
+//  USER DATABASE FUNCTIONS
 const createUser = (name, pass) => {
   let key = generateRandomString(8);
   const created = userDatabase[key] = { //add to userDatabase database
     id : key,
     email: name,
     password: pass
-  } 
-  console.log(created)
-  return created; //return the key (user_id) only to set the cookie in app.post /register
+  };
+  return created; //return the newly created user to use in automatic login after registration
+};
+
+const userInfoChecker = (field, newUser) => {
+  for (let userKnown in userDatabase) {
+    if (userDatabase[userKnown][field] === newUser) {
+      return true; //If there's a key-value that matches the searched one, (for /register the searched one is the 
+    }              // user's requested email), then return true
+  }
+  return false; //if newUser value doesnt exist in userDatabase then return false
 };
 
 // APP GETS
@@ -62,13 +71,12 @@ app.get("/register", (req, res) => {
 // GET URL PAGES
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: req.cookies["user_id"]}
+  const templateVars = { user: req.cookies["user_id"]};
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls", (req, res) => {
   const templateVars = { user: req.cookies["user_id"], urls: urlDatabase };
-  console.log(templateVars["user"])
   res.render("urls_index", templateVars);
 
   app.get("/urls/:shortURL", (req, res) => {
@@ -86,10 +94,10 @@ app.get("/u/:shortURL", (req, res) => {
 app.get(`/`, (req, res) => {
   res.send("Hello!");
   // Cookies that have not been signed
-  console.log('Cookies: ', req.cookies)
+  // console.log('Cookies: ', req.cookies);
 
-  // Cookies that have been signed
-  console.log('Signed Cookies: ', req.signedCookies)
+  // // Cookies that have been signed
+  // console.log('Signed Cookies: ', req.signedCookies);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -110,14 +118,21 @@ app.post(`/login`, (req, res) => {
   res.redirect(`/urls`);
 });
 app.post(`/logout`, (req, res) => {
-  res.clearCookie( "user_id");
+  res.clearCookie("user_id");
   res.redirect(`/urls`);
 });
 
 app.post(`/register`, (req, res) => {
-  const user = (createUser(req.body["email"], req.body["password"]));
-  res.cookie("user_id", user);
-  res.redirect(`/urls`);
+  if (req.body["email"] === '' || req.body["password"] === '') {
+    res.status(400).send('Status code 400');
+  } else if (userInfoChecker("email", req.body["email"])) {
+    res.status(400).send('Status code 400');
+  } else {
+    console.log(userDatabase)
+    const user = (createUser(req.body["email"], req.body["password"]));
+    res.cookie("user_id", user);
+    res.redirect(`/urls`);
+  }
 });
 
 // POST URL MAKING, EDITING AND DELETING
@@ -130,8 +145,8 @@ app.post("/urls", (req, res) => {
     }
   }
   let shortened = generateRandomString(6);
-  editItem(urlDatabase, shortened, req.body.longURL)
-  res.redirect(`urls/${shortened}`)
+  editItem(urlDatabase, shortened, req.body.longURL);
+  res.redirect(`urls/${shortened}`);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
@@ -141,10 +156,10 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:id/edit", (req, res) => {
   editItem(urlDatabase, req.params.id, req.body.longURL);
-  res.redirect(`/urls/${req.params.id}`)
+  res.redirect(`/urls/${req.params.id}`);
 });
 
-// 404 PAGE
+// 404 PAGE bug with, newly generated tinies redirect here rather than to their individual page
 
 // app.get('*', function(req, res){
 //   const templateVars = { user: req.cookies["user_id"]}
