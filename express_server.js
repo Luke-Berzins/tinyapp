@@ -1,11 +1,19 @@
 const express = require('express');
 const app = express();
 const PORT = 8080;
+const cookieParser = require('cookie-parser')
+const bodyParser = require("body-parser");
+
+app.set("view engine", "ejs");
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser())
+
 
 const urlDatabase = {
   "b2xVn2" : "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
 const generateRandomString = () => {
   const string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   let result = '';
@@ -23,29 +31,32 @@ const editTiny = (key, long) => {
   urlDatabase[key] = long;
 };
 
-app.set("view engine", "ejs");
-const bodyParser = require("body-parser");
-app.use(bodyParser.urlencoded({extended: true}));
 
-app.get(`/`, (require, response) => {
-  response.send("Hello!");
+
+app.get(`/`, (req, res) => {
+  res.send("Hello!");
+  // Cookies that have not been signed
+  console.log('Cookies: ', req.cookies)
+
+  // Cookies that have been signed
+  console.log('Signed Cookies: ', req.signedCookies)
 });
 
-app.get("/urls.json", (require, response) => {
-  response.json(urlDatabase);
+app.get("/urls.json", (req, res) => {
+  res.json(urlDatabase);
 });
 
-app.get("/hello", (require, response) => {
-  response.send("<html><body>Hello <b>World</b></body></html>\n");
+app.get("/hello", (req, res) => {
+  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 app.get("/urls/new", (req, res) => {
   res.render("urls_new");
 });
 
-app.get("/urls", (require, response) => {
+app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase };
-  response.render("urls_index", templateVars);
+  res.render("urls_index", templateVars);
 
   app.get("/urls/:shortURL", (req, res) => {
     const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
@@ -63,10 +74,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect(`/urls`);
 });
 
-app.post("/urls/:id/edit", (req, res) => {
-  editTiny(req.params.id, req.body.longURL);
-  res.redirect(`/urls/${req.params.id}`)
+app.post(`/login`, (req, res) => {
+  const named = req.body["username"];
+  res.cookie( "username", named )
+ 
+  res.redirect(`/urls`);
 });
+
 
 app.post("/urls", (req, res) => {
   for (let key in urlDatabase) {
@@ -78,6 +92,11 @@ app.post("/urls", (req, res) => {
   let shortened = generateRandomString();
   urlDatabase[shortened] = req.body.longURL;
   res.redirect(`urls/${shortened}`); 
+});
+
+app.post("/urls/:id/edit", (req, res) => {
+  editTiny(req.params.id, req.body.longURL);
+  res.redirect(`/urls/${req.params.id}`)
 });
 
 app.listen(PORT, () => {
