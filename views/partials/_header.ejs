@@ -18,17 +18,11 @@
         </div>
       </form>
     <% } else { %> 
-      <form class="form-inline" action="/register" method="GET">
-        <div class="form-group mb-2">
-          <button type="submit" class="btn btn-outline-dark">Register</button>
-        </div>
-      </form>
-      <p text="green">'  '</p>
-      <form class="form-inline" action="/login" method="GET">
-        <div class="form-group mb-2">
-          <button type="submit" class="btn btn-outline-dark">Login</button>
-        </div>
-      </form>
+      
+      <a class="btn btn-outline-dark  mr-1" href="/register" role="button">Register</a>
+      
+      <a class="btn btn-outline-dark" href="/login" role="button">Login</a>
+    
    <% } %>
   </nav>
 </header>

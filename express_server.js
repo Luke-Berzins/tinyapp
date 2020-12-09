@@ -126,6 +126,10 @@ app.post(`/login`, (req, res) => {
   if (value && passwordCheck) {
     res.cookie("user_id", value);
     res.redirect(`/urls`);
+  } else if (!value) {
+    res.status(403).send('Status code 403');
+  } else if (value && !passwordCheck) {
+    res.status(403).send('Status code 403 - Password');
   } else {
     res.redirect(`/login`);
   }
