@@ -51,10 +51,12 @@ const createUser = (name, pass) => {
   return created; //return the newly created user to use in automatic login after registration
 };
 
-const userInfoChecker = (field, newUser) => {
+const checkUser = (field, newUser) => {
+  let value;
   for (let userKnown in userDatabase) {
+    value = (userDatabase[userKnown]) 
     if (userDatabase[userKnown][field] === newUser) {
-      return true; //If there's a key-value that matches the searched one, (for /register the searched one is the 
+      return value; //If there's a key-value that matches the searched one, (for /register the searched one is the 
     }              // user's requested email), then return true
   }
   return false; //if newUser value doesnt exist in userDatabase then return false
@@ -63,10 +65,16 @@ const userInfoChecker = (field, newUser) => {
 // APP GETS
 
 // GET LOGIN AND REGISTRATION
+app.get("/login", (req, res) => {
+  const templateVars = { user: req.cookies["user_id"] };
+  res.render("login_user", templateVars);
+});
+
 app.get("/register", (req, res) => {
   const templateVars = { user: req.cookies["user_id"] };
   res.render("register_user", templateVars);
 });
+
 
 // GET URL PAGES
 
@@ -113,10 +121,16 @@ app.get("/hello", (req, res) => {
 // POST LOGIN AND REGISTRATION
 
 app.post(`/login`, (req, res) => {
-  const named = req.body["username"];
-  res.cookie("username", named);
-  res.redirect(`/urls`);
+  const value = (checkUser("email", req.body["email"]));
+  const passwordCheck = value["password"] === req.body["password"];
+  if (value && passwordCheck) {
+    res.cookie("user_id", value);
+    res.redirect(`/urls`);
+  } else {
+    res.redirect(`/login`);
+  }
 });
+
 app.post(`/logout`, (req, res) => {
   res.clearCookie("user_id");
   res.redirect(`/urls`);
@@ -125,10 +139,9 @@ app.post(`/logout`, (req, res) => {
 app.post(`/register`, (req, res) => {
   if (req.body["email"] === '' || req.body["password"] === '') {
     res.status(400).send('Status code 400');
-  } else if (userInfoChecker("email", req.body["email"])) {
+  } else if (checkUser("email", req.body["email"])) {
     res.status(400).send('Status code 400');
   } else {
-    console.log(userDatabase)
     const user = (createUser(req.body["email"], req.body["password"]));
     res.cookie("user_id", user);
     res.redirect(`/urls`);
