@@ -2,6 +2,7 @@
 const express = require('express');
 const bodyParser = require("body-parser");
 const cookieParser = require('cookie-parser');
+const bcrypt = require('bcrypt');
 
 //SERVER
 const PORT = 8080;
@@ -132,7 +133,8 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.post(`/login`, (req, res) => {
   const value = (checkUser("email", req.body["email"]));
-  const passwordCheck = value["password"] === req.body["password"];
+  bcrypt.compareSync(req.body["password"], value["password"]);
+  const passwordCheck = bcrypt.compareSync(req.body["password"], value["password"]);
   if (value && passwordCheck) {
     res.cookie("user_id", value);
     res.redirect(`/urls`);
@@ -156,7 +158,7 @@ app.post(`/register`, (req, res) => {
   } else if (checkUser("email", req.body["email"])) {
     res.status(400).send('Status code 400');
   } else {
-    const user = (createUser(req.body["email"], req.body["password"]));
+    const user = createUser(req.body["email"], bcrypt.hashSync(req.body["password"], 10));
     res.cookie("user_id", user);
     res.redirect(`/urls`);
   }
