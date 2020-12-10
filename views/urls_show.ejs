@@ -3,14 +3,13 @@
 <head>
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
   <title>URL - TinyApp Example</title>
-  <%- include('partials/_header'); %>
 </head>
 
 <body>
-  
+  <%- include('partials/_header'); %>
 
-  
   <div class="card text-center">
       <div class="card-header"></div>
       <div class="card-body">
@@ -18,25 +17,19 @@
         <p class="card-text">Short URL: <a href="<%= longURL['longURL'] %>"><%= shortURL %></a></p>
       </div>
     <div class="card-footer text-muted"></div>
-    
   </div>
 
   <div class="d-flex justify-content-center align-items-center container ">
     <div class="row ">
-  <div>
-    
-   
-    <form class="form-inline" action="/urls/<%= shortURL %>/edit" method="POST">
+      <form class="form-inline" action="/urls/<%= shortURL %>/edit" method="POST">
       <div class="form-group mb-2">
         <label for="longURL">Change this Tiny's site:</label>
         <input class="form-control" type="text" name="longURL" placeholder="http://" >
-          <button type="submit" class="btn btn-outline-success">Update!</button>
-        </div>
+        <button type="submit" class="btn btn-outline-success">Update!</button>
+      </div>
       </form>
-
     </div>
   </div>
-</div>
   
  
   <!-- Bootstrap JS -->

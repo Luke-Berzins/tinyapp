@@ -16,7 +16,7 @@ const deleteItem = (database, key) => {
 //URL DATABASE FUNCTIONS
 
 const editItem = (database, key, long, userInfo) => { //specific to URL database structure
-  database[key] = {longURL: long, userID: userInfo }
+  database[key] = {longURL: long, userID: userInfo };
 };
 
 const urlsForUser = (id, database) => { //returns an object with the urlDatabase key-values that match the specified user id
@@ -27,7 +27,7 @@ const urlsForUser = (id, database) => { //returns an object with the urlDatabase
     }
   }
   return songTags;
-} 
+};
 
 const checkUser = (field, newUser, database) => { //this checks user data against register and login queries
   let value;
@@ -36,7 +36,7 @@ const checkUser = (field, newUser, database) => { //this checks user data agains
     if (database[userKnown][field] === newUser) {
       return value; //if they do exist return their info for /login
       //if they do exist give a truthy value for /register
-    }             
+    }
   }
   //if newUser value doesnt exist in database then return false for /login
   return false; //if newUser value doesnt exist in database then return false for /register
@@ -45,7 +45,7 @@ const checkUser = (field, newUser, database) => { //this checks user data agains
 //  USER DATABASE FUNCTIONS
 const createUser = (name, pass, database) => { //specific to user database structure
   let key = generateRandomString(8);
-  const created = database[key] = { //add to database 
+  const created = database[key] = { //add to database
     id : key,
     email: name,
     password: pass
@@ -54,8 +54,8 @@ const createUser = (name, pass, database) => { //specific to user database struc
 };
 
 module.exports = { generateRandomString,
-                   deleteItem,
-                   editItem, 
-                   urlsForUser, 
-                   checkUser,
-                   createUser };
+  deleteItem,
+  editItem,
+  urlsForUser,
+  checkUser,
+  createUser };
