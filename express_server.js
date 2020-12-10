@@ -32,6 +32,7 @@ const urlDatabase = { //structure of database
   // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
+
 //FUNCTIONS
 
 const generateRandomString = (name) => {
@@ -130,6 +131,15 @@ app.get("/urls/new", (req, res) => {
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.user_id]["longURL"];
   res.redirect(longURL);
+});
+
+// DATABASE VIEWER
+app.get("/urls-data", (req, res) => {
+  res.json(urlDatabase)
+});
+
+app.get("/user-data", (req, res) => {
+  res.json(userDatabase)
 });
 
 // APP POSTS
