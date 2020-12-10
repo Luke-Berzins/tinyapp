@@ -14,9 +14,9 @@ app.use(cookieParser());
 
 //DATABASES
 const userDatabase = { //structure of database
-  // {
-  // O1qFUflm: { id: 'O1qFUflm', email: 'lukeberzins16@gmail.com',password: 'chocolate_chip' },
-  // cwW921dh: { id: 'cwW921dh', email: 'funky-chicken-234@hotmail.com', password: 'pancakes' }
+  // { 
+    // O1qFUflm: { id: 'O1qFUflm', email: 'lukeberzins16@gmail.com',password: 'chocolate_chip' },
+    // cwW921dh: { id: 'cwW921dh', email: 'funky-chicken-234@hotmail.com', password: 'pancakes' } 
   // }
 };
 
@@ -43,7 +43,7 @@ const deleteItem = (database, key) => {
 //URL DATABASE FUNCTIONS
 
 const editItem = (database, key, long, userInfo) => { //specific to URL database structure
-  database[key] = {longURL: long, userID: userInfo };
+  database[key] = {longURL: long, userID: userInfo }
 };
 
 const urlsForUser = id => { //returns an object with the urlDatabase key-values that match the specified user id
@@ -54,17 +54,17 @@ const urlsForUser = id => { //returns an object with the urlDatabase key-values 
     }
   }
   return songTags;
-};
+} 
 
 //  USER DATABASE FUNCTIONS
 const createUser = (name, pass) => {
   let key = generateRandomString(8);
-  const created = userDatabase[key] = { //add to userDatabase database
+  const created = userDatabase[key] = { //add to userDatabase 
     id : key,
     email: name,
     password: pass
   };
-  console.log(userDatabase);
+  console.log(userDatabase)
   return created; //return the newly created user to use in automatic login after registration
 };
 
@@ -75,7 +75,7 @@ const checkUser = (field, newUser) => { //this checks user data against register
     if (userDatabase[userKnown][field] === newUser) {
       return value; //if they do exist return their info for /login
       //if they do exist give a truthy value for /register
-    }
+    }             
   }
   //if newUser value doesnt exist in userDatabase then return false for /login
   return false; //if newUser value doesnt exist in userDatabase then return false for /register
@@ -99,9 +99,9 @@ app.get("/register", (req, res) => {
 
 app.get("/urls", (req, res) => {
   if (req.cookies["user_id"]) {
-    const urlList = urlsForUser(req.cookies["user_id"]["id"]);
-    const templateVars = { user: req.cookies["user_id"], urls: urlList };
-    res.render("urls_index", templateVars);
+  const urlList = urlsForUser(req.cookies["user_id"]["id"]) 
+  const templateVars = { user: req.cookies["user_id"], urls: urlList };
+  res.render("urls_index", templateVars);
   } else {
     res.redirect("/login");
   }
@@ -114,34 +114,16 @@ app.get("/urls", (req, res) => {
 
 app.get("/urls/new", (req, res) => {
   if (req.cookies["user_id"]) {
-    const templateVars = { user: req.cookies["user_id"]};
-    res.render("urls_new", templateVars);
+  const templateVars = { user: req.cookies["user_id"]};
+  res.render("urls_new", templateVars);
   } else {
     res.redirect("/login");
-  }
+  };
 });
 
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.user_id]["longURL"];
   res.redirect(longURL);
-});
-
-// GET MISC
-app.get(`/`, (req, res) => {
-  res.send("Hello!");
-  // Cookies that have not been signed
-  // console.log('Cookies: ', req.cookies);
-
-  // // Cookies that have been signed
-  // console.log('Signed Cookies: ', req.signedCookies);
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
 // APP POSTS
@@ -196,7 +178,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:id/edit", (req, res) => {
+  if (req.cookies["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {
   editItem(urlDatabase, req.params.id, req.body.longURL, req.cookies["user_id"]["id"]);
+  }
   res.redirect(`/urls/${req.params.id}`);
 });
 
