@@ -32,13 +32,25 @@ const generateRandomString = (name) => {
   return result; //not the most elegant but I came up with it myself, so come on, you know?
 };
 
+//URL DATABASE FUNCTIONS
 const deleteItem = (database, key) => {
   delete database[key];
 };
 
 const editItem = (database, key, long, userInfo) => {
+  console.log(userInfo)
   database[key] = {longURL: long, userID: userInfo }
 };
+
+const urlsForUser = id => {
+  let songTags = {};
+  for (let song in urlDatabase) {
+    if (urlDatabase[song]["userID"] === id) {
+      songTags[song] = urlDatabase[song];
+    }
+  }
+  return songTags;
+} 
 
 //  USER DATABASE FUNCTIONS
 const createUser = (name, pass) => {
@@ -78,6 +90,22 @@ app.get("/register", (req, res) => {
 
 // GET URL PAGES
 
+app.get("/urls", (req, res) => {
+  if (req.cookies["user_id"]) {
+  const urlList = urlsForUser(req.cookies["user_id"]["id"]) 
+  console.log(urlList)
+  const templateVars = { user: req.cookies["user_id"], urls: urlList };
+  res.render("urls_index", templateVars);
+  } else {
+    res.redirect("/login");
+  }
+  
+  app.get("/urls/:shortURL", (req, res) => {
+    const templateVars = { user: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+    res.render("urls_show", templateVars);
+  });
+});
+
 app.get("/urls/new", (req, res) => {
   if (req.cookies["user_id"]) {
   const templateVars = { user: req.cookies["user_id"]};
@@ -87,18 +115,8 @@ app.get("/urls/new", (req, res) => {
   };
 });
 
-app.get("/urls", (req, res) => {
-  const templateVars = { user: req.cookies["user_id"], urls: urlDatabase };
-  res.render("urls_index", templateVars);
-
-  app.get("/urls/:shortURL", (req, res) => {
-    const templateVars = { user: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
-    res.render("urls_show", templateVars);
-  });
-});
-
 app.get("/u/:shortURL", (req, res) => {
-  console.log(req.params.shortURL)
+  console.log(req.params.shortURL, "/u/short")
   const longURL = urlDatabase[req.params.user_id]["longURL"];
   res.redirect(longURL);
 });
@@ -160,12 +178,6 @@ app.post(`/register`, (req, res) => {
 // POST URL MAKING, EDITING AND DELETING
 
 app.post("/urls", (req, res) => {
-  for (let key in urlDatabase) {
-    if (urlDatabase[key]["longURL"] === req.body.longURL) {
-      res.redirect(`urls/${key}`);
-      return;
-    }
-  }
   let shortened = generateRandomString(6);
   editItem(urlDatabase, shortened, req.body.longURL, req.cookies["user_id"]["id"]);
   res.redirect(`urls/${shortened}`);
@@ -177,9 +189,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:id/edit", (req, res) => {
-  console.log(urlDatabase)
   editItem(urlDatabase, req.params.id, req.body.longURL, req.cookies["user_id"]["id"]);
-  console.log(urlDatabase)
   res.redirect(`/urls/${req.params.id}`);
 });
 
