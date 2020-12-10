@@ -10,7 +10,7 @@
 </head>
 <body>
   <%- include('partials/_header'); %>
-  
+  <% if(user){ %>
   <main style="margin: 1em;">
     <h3>My URLs</h3>
     <table class="table">
@@ -32,6 +32,16 @@
             <td><button type="submit" class="btn btn-outline-danger">Delete</button></td>
             </form>
           </tr>
+        <% } %>
+        <% } else { %> 
+
+          <span class="d-block p-2 bg-outline-success text-green"><h1>Whoops, you need an account to do that.</h1></span>
+    <span class="d-block p-2 bg-success text-green"><h4>What do you call a tiny pun?</h4></span>
+    <span class="d-block p-2 bg-dark text-white"><h5>Puny</h5></span>
+  
+          <a class="btn btn-outline-dark  mr-2 mt-3" href="/register" role="button">Register</a>
+          <a class="btn btn-outline-dark mt-3" href="/login" role="button">Login</a>
+        
         <% } %>
       </tbody>
     </table>
