@@ -17,8 +17,8 @@ const userDatabase = {
 };
 
 const urlDatabase = {
-  "b2xVn2" : "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
+  i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
 //FUNCTIONS
@@ -36,8 +36,8 @@ const deleteItem = (database, key) => {
   delete database[key];
 };
 
-const editItem = (database, key, long) => {
-  database[key] = long;
+const editItem = (database, key, long, userInfo) => {
+  database[key] = {longURL: long, userID: userInfo }
 };
 
 //  USER DATABASE FUNCTIONS
@@ -98,7 +98,8 @@ app.get("/urls", (req, res) => {
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
+  console.log(req.params.shortURL)
+  const longURL = urlDatabase[req.params.user_id]["longURL"];
   res.redirect(longURL);
 });
 
@@ -160,13 +161,13 @@ app.post(`/register`, (req, res) => {
 
 app.post("/urls", (req, res) => {
   for (let key in urlDatabase) {
-    if (urlDatabase[key] === req.body.longURL) {
+    if (urlDatabase[key]["longURL"] === req.body.longURL) {
       res.redirect(`urls/${key}`);
       return;
     }
   }
   let shortened = generateRandomString(6);
-  editItem(urlDatabase, shortened, req.body.longURL);
+  editItem(urlDatabase, shortened, req.body.longURL, req.cookies["user_id"]["id"]);
   res.redirect(`urls/${shortened}`);
 });
 
@@ -176,7 +177,9 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 
 app.post("/urls/:id/edit", (req, res) => {
-  editItem(urlDatabase, req.params.id, req.body.longURL);
+  console.log(urlDatabase)
+  editItem(urlDatabase, req.params.id, req.body.longURL, req.cookies["user_id"]["id"]);
+  console.log(urlDatabase)
   res.redirect(`/urls/${req.params.id}`);
 });
 
