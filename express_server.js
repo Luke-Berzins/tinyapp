@@ -79,8 +79,12 @@ app.get("/register", (req, res) => {
 // GET URL PAGES
 
 app.get("/urls/new", (req, res) => {
+  if (req.cookies["user_id"]) {
   const templateVars = { user: req.cookies["user_id"]};
   res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
+  };
 });
 
 app.get("/urls", (req, res) => {
