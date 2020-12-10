@@ -1,7 +1,7 @@
 // REQUIREMENTS
 const express = require('express');
 const bodyParser = require("body-parser");
-const cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 //helper functions
 const helpers = require('./helpers');
@@ -9,7 +9,7 @@ const helpers = require('./helpers');
 //SERVER
 const PORT = 8080;
 
-// EXPRESS APP SETUP AND MIDDLEWARE 
+// EXPRESS APP SETUP AND MIDDLEWARE
 const app = express();
 //setting ejs as the template engine
 app.set("view engine", "ejs");
@@ -19,14 +19,12 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2']
-}))
+}));
 
 //DATABASES
 const userDatabase = { //structure of database
-  // { 
-    // O1qFUflm: { id: 'O1qFUflm', email: 'lukeberzins16@gmail.com',password: 'chocolate_chip' },
-    // cwW921dh: { id: 'cwW921dh', email: 'funky-chicken-234@hotmail.com', password: 'pancakes' } 
-  // }
+  // O1qFUflm: { id: 'O1qFUflm', email: 'lukeberzins16@gmail.com',password: 'chocolate_chip' },
+  // cwW921dh: { id: 'cwW921dh', email: 'funky-chicken-234@hotmail.com', password: 'pancakes' }
 };
 
 const urlDatabase = { //structure of database
@@ -37,12 +35,12 @@ const urlDatabase = { //structure of database
 // APP GETS
 
 // GET LOGIN AND REGISTRATION
-app.get("/login", (req, res) => {
+app.get("/login", (req, res) => { //login page
   const templateVars = { user: req.session["user_id"] };
   res.render("login_user", templateVars);
 });
 
-app.get("/register", (req, res) => {
+app.get("/register", (req, res) => { //registration page
   const templateVars = { user: req.session["user_id"] };
   res.render("register_user", templateVars);
 });
@@ -50,80 +48,81 @@ app.get("/register", (req, res) => {
 
 // GET URL PAGES
 app.get("/urls", (req, res) => {
-  if (req.session["user_id"]) {
-  const urlList = helpers.urlsForUser(req.session["user_id"]["id"], urlDatabase) 
-  const templateVars = { user: req.session["user_id"], urls: urlList };
-  res.render("urls_index", templateVars);
-  } else {
-    const templateVars = { user: null };
+  if (req.session["user_id"]) { //if user is logged in
+    const urlList = helpers.urlsForUser(req.session["user_id"]["id"], urlDatabase); //filter url database to their links
+    const templateVars = { user: req.session["user_id"], urls: urlList };
+    res.render("urls_index", templateVars);
+  } else { //if not logged in
+    const templateVars = { user: null }; //user value affects urls_index rendering
     res.render("urls_index", templateVars);
   }
   
   app.get("/urls/:shortURL", (req, res) => {
+    //renders individual show page, redirect to actual website on long link & short link
     const templateVars = { user: req.session["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
     res.render("urls_show", templateVars);
   });
 });
 
 app.get("/urls/new", (req, res) => {
-  if (req.session["user_id"]) {
-  const templateVars = { user: req.session["user_id"]};
-  res.render("urls_new", templateVars);
+  if (req.session["user_id"]) { //accessible only if logged in
+    const templateVars = { user: req.session["user_id"]};
+    res.render("urls_new", templateVars);
   } else {
     const templateVars = { user: null };
-    res.render("urls_index", templateVars)
-  };
+    res.render("urls_index", templateVars);
+  }
 });
 
-app.get("/u/:shortURL", (req, res) => {
+app.get("/u/:shortURL", (req, res) => { //will redirect to new show page after link creation
   const longURL = urlDatabase[req.params.user_id]["longURL"];
   res.redirect(longURL);
 });
 
-// DATABASE VIEWER
-app.get("/urls-data", (req, res) => {
-  res.json(urlDatabase)
-});
+// DATABASE VIEWER uncomment to see databases from browswer if you are debugging database interactions
+// app.get("/urls-data", (req, res) => {
+//   res.json(urlDatabase)
+// });
 
-app.get("/user-data", (req, res) => {
-  res.json(userDatabase)
-});
+// app.get("/user-data", (req, res) => {
+//   res.json(userDatabase)
+// });
 
 // APP POSTS
 
 // POST LOGIN AND REGISTRATION
 
 app.post(`/login`, (req, res) => {
-  const value = (helpers.checkUser("email", req.body["email"], userDatabase));
-  let passwordCheck;
+  const value = (helpers.checkUser("email", req.body["email"], userDatabase)); //will return an object of the user if it exists
+  let passwordCheck; //need to set this or else "if (value && passwordCheck)" will fail without else statement intializing ***
   if (!value) {
-    res.status(403).send('Status code 403 - User not registered');
-  } else {
+    res.status(403).send('Status code 403 - User not registered'); //if user doesnt exist send error
+  } else { // *** this is the else statement the above comment is referring to
     passwordCheck = bcrypt.compareSync(req.body["password"], value["password"]);
   }
-    if (value && passwordCheck) {
+  if (value && passwordCheck) { //if username and password match log in
     req.session["user_id"] = value;
     res.redirect(`/urls`);
-  } else if (value && !passwordCheck) {
+  } else if (value && !passwordCheck) { //if user exists and password is incorrect send error
     res.status(403).send('Status code 403 - Password');
   } else {
-    res.redirect(`/login`);
+    res.redirect(`/login`); //if
   }
 });
 
 app.post(`/logout`, (req, res) => {
-  req.session = null;
-  res.redirect(`/urls`);
+  req.session = null; //reset cookies
+  res.redirect("/login");
 });
 
 app.post(`/register`, (req, res) => {
   if (req.body["email"] === '' || req.body["password"] === '') {
-    res.status(400).send('Status code 400');
+    res.status(400).send('Status code 400'); //if nothing was given send error
   } else if (helpers.checkUser("email", req.body["email"], userDatabase)) {
-    res.status(400).send('Status code 400');
+    res.status(400).send('Status code 400'); //if user exists send error
   } else {
     const user = helpers.createUser(req.body["email"], bcrypt.hashSync(req.body["password"], 10), userDatabase);
-    req.session['user_id'] = user;
+    req.session['user_id'] = user; //if new user and password then register
     res.redirect(`/urls`);
   }
 });
@@ -132,19 +131,19 @@ app.post(`/register`, (req, res) => {
 
 app.post("/urls", (req, res) => {
   let shortened = helpers.generateRandomString(6);
-  helpers.editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]);
+  helpers.editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]); //makes new url in database
   res.redirect(`urls/${shortened}`);
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => {
-  if (req.session["user_id"]["id"] === urlDatabase[req.params.shortURL]["userID"]) {
+app.post("/urls/:shortURL/delete", (req, res) => { //delete button
+  if (req.session["user_id"]["id"] === urlDatabase[req.params.shortURL]["userID"]) { //conditional ensures only user can delete their links
     helpers.deleteItem(urlDatabase, req.params.shortURL);
   }
   res.redirect(`/urls`);
 });
 
-app.post("/urls/:id/edit", (req, res) => {
-  if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {
+app.post("/urls/:id/edit", (req, res) => { //edit button
+  if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {//conditional ensures only user can edit their links
     helpers.editItem(urlDatabase, req.params.id, req.body.longURL, req.session["user_id"]["id"]);
   }
   res.redirect(`/urls/${req.params.id}`);
