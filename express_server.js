@@ -2,17 +2,22 @@
 const express = require('express');
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session')
-const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 
 //SERVER
 const PORT = 8080;
 
-// APP SETUP AND MIDDLEWARE IMPLEMENTATION
+// EXPRESS APP SETUP AND MIDDLEWARE 
 const app = express();
+//setting ejs as the template engine
 app.set("view engine", "ejs");
+//parse incoming request bodies, data available under req.body
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+//secure cookies middleware
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1', 'key2']
+}))
 
 //DATABASES
 const userDatabase = { //structure of database
@@ -86,12 +91,12 @@ const checkUser = (field, newUser) => { //this checks user data against register
 
 // GET LOGIN AND REGISTRATION
 app.get("/login", (req, res) => {
-  const templateVars = { user: req.cookies["user_id"] };
+  const templateVars = { user: req.session["user_id"] };
   res.render("login_user", templateVars);
 });
 
 app.get("/register", (req, res) => {
-  const templateVars = { user: req.cookies["user_id"] };
+  const templateVars = { user: req.session["user_id"] };
   res.render("register_user", templateVars);
 });
 
@@ -99,23 +104,23 @@ app.get("/register", (req, res) => {
 // GET URL PAGES
 
 app.get("/urls", (req, res) => {
-  if (req.cookies["user_id"]) {
-  const urlList = urlsForUser(req.cookies["user_id"]["id"]) 
-  const templateVars = { user: req.cookies["user_id"], urls: urlList };
+  if (req.session["user_id"]) {
+  const urlList = urlsForUser(req.session["user_id"]["id"]) 
+  const templateVars = { user: req.session["user_id"], urls: urlList };
   res.render("urls_index", templateVars);
   } else {
     res.redirect("/login");
   }
   
   app.get("/urls/:shortURL", (req, res) => {
-    const templateVars = { user: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+    const templateVars = { user: req.session["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
     res.render("urls_show", templateVars);
   });
 });
 
 app.get("/urls/new", (req, res) => {
-  if (req.cookies["user_id"]) {
-  const templateVars = { user: req.cookies["user_id"]};
+  if (req.session["user_id"]) {
+  const templateVars = { user: req.session["user_id"]};
   res.render("urls_new", templateVars);
   } else {
     res.redirect("/login");
@@ -140,7 +145,7 @@ app.post(`/login`, (req, res) => {
     passwordCheck = bcrypt.compareSync(req.body["password"], value["password"]);
   }
     if (value && passwordCheck) {
-    res.cookie("user_id", value);
+    req.session["user_id"] = value;
     res.redirect(`/urls`);
   } else if (value && !passwordCheck) {
     res.status(403).send('Status code 403 - Password');
@@ -150,7 +155,7 @@ app.post(`/login`, (req, res) => {
 });
 
 app.post(`/logout`, (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect(`/urls`);
 });
 
@@ -161,7 +166,7 @@ app.post(`/register`, (req, res) => {
     res.status(400).send('Status code 400');
   } else {
     const user = createUser(req.body["email"], bcrypt.hashSync(req.body["password"], 10));
-    res.cookie("user_id", user);
+    req.session['user_id'] = user;
     res.redirect(`/urls`);
   }
 });
@@ -170,20 +175,20 @@ app.post(`/register`, (req, res) => {
 
 app.post("/urls", (req, res) => {
   let shortened = generateRandomString(6);
-  editItem(urlDatabase, shortened, req.body.longURL, req.cookies["user_id"]["id"]);
+  editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]);
   res.redirect(`urls/${shortened}`);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (req.cookies["user_id"]["id"] === urlDatabase[req.params.shortURL]["userID"]) {
+  if (req.session["user_id"]["id"] === urlDatabase[req.params.shortURL]["userID"]) {
     deleteItem(urlDatabase, req.params.shortURL);
   }
   res.redirect(`/urls`);
 });
 
 app.post("/urls/:id/edit", (req, res) => {
-  if (req.cookies["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {
-  editItem(urlDatabase, req.params.id, req.body.longURL, req.cookies["user_id"]["id"]);
+  if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {
+  editItem(urlDatabase, req.params.id, req.body.longURL, req.session["user_id"]["id"]);
   }
   res.redirect(`/urls/${req.params.id}`);
 });
@@ -191,7 +196,7 @@ app.post("/urls/:id/edit", (req, res) => {
 // 404 PAGE bug with, newly generated tinies redirect here rather than to their individual page
 
 // app.get('*', function(req, res){
-//   const templateVars = { user: req.cookies["user_id"]}
+//   const templateVars = { user: req.session["user_id"]}
 //   res.render("404_page", templateVars);
 // });
 
