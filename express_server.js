@@ -1,6 +1,7 @@
 // REQUIREMENTS
 const express = require('express');
 const bodyParser = require("body-parser");
+const cookieSession = require('cookie-session')
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 
@@ -65,7 +66,6 @@ const createUser = (name, pass) => {
     email: name,
     password: pass
   };
-  console.log(userDatabase)
   return created; //return the newly created user to use in automatic login after registration
 };
 
@@ -133,13 +133,15 @@ app.get("/u/:shortURL", (req, res) => {
 
 app.post(`/login`, (req, res) => {
   const value = (checkUser("email", req.body["email"]));
-  bcrypt.compareSync(req.body["password"], value["password"]);
-  const passwordCheck = bcrypt.compareSync(req.body["password"], value["password"]);
-  if (value && passwordCheck) {
+  let passwordCheck;
+  if (!value) {
+    res.status(403).send('Status code 403 - User not registered');
+  } else {
+    passwordCheck = bcrypt.compareSync(req.body["password"], value["password"]);
+  }
+    if (value && passwordCheck) {
     res.cookie("user_id", value);
     res.redirect(`/urls`);
-  } else if (!value) {
-    res.status(403).send('Status code 403');
   } else if (value && !passwordCheck) {
     res.status(403).send('Status code 403 - Password');
   } else {
