@@ -3,6 +3,8 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const cookieSession = require('cookie-session')
 const bcrypt = require('bcrypt');
+//helper functions
+const helpers = require('./helpers');
 
 //SERVER
 const PORT = 8080;
@@ -32,62 +34,6 @@ const urlDatabase = { //structure of database
   // i3BoGr: { longURL: "https://www.google.ca", userID: "aJ48lW" }
 };
 
-
-//FUNCTIONS
-
-const generateRandomString = (name) => {
-  const string = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  let result = '';
-  while (result.length < name) {
-    result += string[Math.floor((Math.random() * 61))];
-  }
-  return result; //not the most elegant but who is?
-};
-
-const deleteItem = (database, key) => {
-  delete database[key];
-};
-
-//URL DATABASE FUNCTIONS
-
-const editItem = (database, key, long, userInfo) => { //specific to URL database structure
-  database[key] = {longURL: long, userID: userInfo }
-};
-
-const urlsForUser = id => { //returns an object with the urlDatabase key-values that match the specified user id
-  let songTags = {};
-  for (let song in urlDatabase) {
-    if (urlDatabase[song]["userID"] === id) {
-      songTags[song] = urlDatabase[song];
-    }
-  }
-  return songTags;
-} 
-
-//  USER DATABASE FUNCTIONS
-const createUser = (name, pass) => {
-  let key = generateRandomString(8);
-  const created = userDatabase[key] = { //add to userDatabase 
-    id : key,
-    email: name,
-    password: pass
-  };
-  return created; //return the newly created user to use in automatic login after registration
-};
-
-const checkUser = (field, newUser) => { //this checks user data against register and login queries
-  let value;
-  for (let userKnown in userDatabase) {
-    value = (userDatabase[userKnown]);
-    if (userDatabase[userKnown][field] === newUser) {
-      return value; //if they do exist return their info for /login
-      //if they do exist give a truthy value for /register
-    }             
-  }
-  //if newUser value doesnt exist in userDatabase then return false for /login
-  return false; //if newUser value doesnt exist in userDatabase then return false for /register
-};
-
 // APP GETS
 
 // GET LOGIN AND REGISTRATION
@@ -103,14 +49,14 @@ app.get("/register", (req, res) => {
 
 
 // GET URL PAGES
-
 app.get("/urls", (req, res) => {
   if (req.session["user_id"]) {
-  const urlList = urlsForUser(req.session["user_id"]["id"]) 
+  const urlList = helpers.urlsForUser(req.session["user_id"]["id"], urlDatabase) 
   const templateVars = { user: req.session["user_id"], urls: urlList };
   res.render("urls_index", templateVars);
   } else {
-    res.redirect("/login");
+    const templateVars = { user: null };
+    res.render("urls_index", templateVars);
   }
   
   app.get("/urls/:shortURL", (req, res) => {
@@ -124,7 +70,8 @@ app.get("/urls/new", (req, res) => {
   const templateVars = { user: req.session["user_id"]};
   res.render("urls_new", templateVars);
   } else {
-    res.redirect("/login");
+    const templateVars = { user: null };
+    res.render("urls_index", templateVars)
   };
 });
 
@@ -147,7 +94,7 @@ app.get("/user-data", (req, res) => {
 // POST LOGIN AND REGISTRATION
 
 app.post(`/login`, (req, res) => {
-  const value = (checkUser("email", req.body["email"]));
+  const value = (helpers.checkUser("email", req.body["email"], userDatabase));
   let passwordCheck;
   if (!value) {
     res.status(403).send('Status code 403 - User not registered');
@@ -172,10 +119,10 @@ app.post(`/logout`, (req, res) => {
 app.post(`/register`, (req, res) => {
   if (req.body["email"] === '' || req.body["password"] === '') {
     res.status(400).send('Status code 400');
-  } else if (checkUser("email", req.body["email"])) {
+  } else if (helpers.checkUser("email", req.body["email"], userDatabase)) {
     res.status(400).send('Status code 400');
   } else {
-    const user = createUser(req.body["email"], bcrypt.hashSync(req.body["password"], 10));
+    const user = helpers.createUser(req.body["email"], bcrypt.hashSync(req.body["password"], 10), userDatabase);
     req.session['user_id'] = user;
     res.redirect(`/urls`);
   }
@@ -184,21 +131,21 @@ app.post(`/register`, (req, res) => {
 // POST URL MAKING, EDITING AND DELETING
 
 app.post("/urls", (req, res) => {
-  let shortened = generateRandomString(6);
-  editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]);
+  let shortened = helpers.generateRandomString(6);
+  helpers.editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]);
   res.redirect(`urls/${shortened}`);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (req.session["user_id"]["id"] === urlDatabase[req.params.shortURL]["userID"]) {
-    deleteItem(urlDatabase, req.params.shortURL);
+    helpers.deleteItem(urlDatabase, req.params.shortURL);
   }
   res.redirect(`/urls`);
 });
 
 app.post("/urls/:id/edit", (req, res) => {
   if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {
-  editItem(urlDatabase, req.params.id, req.body.longURL, req.session["user_id"]["id"]);
+    helpers.editItem(urlDatabase, req.params.id, req.body.longURL, req.session["user_id"]["id"]);
   }
   res.redirect(`/urls/${req.params.id}`);
 });
