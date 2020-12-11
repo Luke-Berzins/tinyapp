@@ -6,7 +6,7 @@ const generateRandomString = (name) => {
   while (result.length < name) {
     result += string[Math.floor((Math.random() * 61))];
   }
-  return result; //not the most elegant but who is?
+  return result;
 };
 
 const deleteItem = (database, key) => {
@@ -15,11 +15,13 @@ const deleteItem = (database, key) => {
 
 //URL DATABASE FUNCTIONS
 
-const editItem = (database, key, long, userInfo) => { //specific to URL database structure
-  database[key] = {longURL: long, userID: userInfo };
+const editItem = (database, key, long, userInfo) => {
+  database[key] = {};
+  database[key]["longURL"] = long;
+  database[key]["userID"] = userInfo;
 };
 
-const urlsForUser = (id, database) => { //returns an object with the urlDatabase key-values that match the specified user id
+const urlsForUser = (id, database) => {
   let songTags = {};
   for (let song in database) {
     if (database[song]["userID"] === id) {
@@ -29,23 +31,21 @@ const urlsForUser = (id, database) => { //returns an object with the urlDatabase
   return songTags;
 };
 
-const checkUser = (field, newUser, database) => { //this checks user data against register and login queries
+const checkUser = (field, newUser, database) => {
   let value;
   for (let userKnown in database) {
     value = (database[userKnown]);
     if (database[userKnown][field] === newUser) {
-      return value; //if they do exist return their info for /login
-      //if they do exist give a truthy value for /register
+      return value;
     }
   }
-  //if newUser value doesnt exist in database then return false for /login
-  return false; //if newUser value doesnt exist in database then return false for /register
+  return false;
 };
 
 //  USER DATABASE FUNCTIONS
-const createUser = (name, pass, database) => { //specific to user database structure
+const createUser = (name, pass, database) => {
   let key = generateRandomString(8);
-  const created = database[key] = { //add to database
+  const created = database[key] = {
     id : key,
     email: name,
     password: pass
