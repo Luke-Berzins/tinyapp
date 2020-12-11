@@ -33,18 +33,16 @@ const urlDatabase = { //structure of database
 };
 
 // APP GETS
-
-// GET LOGIN AND REGISTRATION
-app.get("/login", (req, res) => { //login page
-  const templateVars = { user: req.session["user_id"] };
-  res.render("login_user", templateVars);
+app.get("/", (req, res) => {
+  if (req.session["user_id"]) {
+    const urlList = helpers.urlsForUser(req.session["user_id"]["id"], urlDatabase); //filter url database to their links
+    const templateVars = { user: req.session["user_id"], urls: urlList };
+    res.render("urls_index", templateVars);
+  } else { //if not logged in
+    const templateVars = { user: req.session["user_id"], error1: null, error2: null };
+    res.render("login_user", templateVars);
+  }
 });
-
-app.get("/register", (req, res) => { //registration page
-  const templateVars = { user: req.session["user_id"] };
-  res.render("register_user", templateVars);
-});
-
 
 // GET URL PAGES
 app.get("/urls", (req, res) => {
@@ -56,12 +54,6 @@ app.get("/urls", (req, res) => {
     const templateVars = { user: null }; //user value affects urls_index rendering
     res.render("urls_index", templateVars);
   }
-  
-  app.get("/urls/:shortURL", (req, res) => {
-    //renders individual show page, redirect to actual website on long link & short link
-    const templateVars = { user: req.session["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
-    res.render("urls_show", templateVars);
-  });
 });
 
 app.get("/urls/new", (req, res) => {
@@ -69,15 +61,68 @@ app.get("/urls/new", (req, res) => {
     const templateVars = { user: req.session["user_id"]};
     res.render("urls_new", templateVars);
   } else {
-    const templateVars = { user: null };
-    res.render("urls_index", templateVars);
+    const templateVars = { user: req.session["user_id"], error1: null, error2: null };
+    res.render("login_user", templateVars);
   }
 });
 
-app.get("/u/:shortURL", (req, res) => { //will redirect to new show page after link creation
-  const longURL = urlDatabase[req.params.user_id]["longURL"];
+app.get("/urls/:id", (req, res) => {
+  //renders individual show page, redirect to actual website on long link & short link
+  if (urlDatabase[req.params.id] === undefined) {
+    const templateVars = { user: req.session["user_id"] };
+    res.render("404_page", templateVars);
+  } else {
+    const templateVars = { user: req.session["user_id"], shortURL: req.params.id, longURL: urlDatabase[req.params.id]};
+    res.render("urls_show", templateVars);
+  }
+});
+
+app.get("/u/:id", (req, res) => { //will redirect to targeted page
+  const longURL = urlDatabase[req.params.id]["longURL"];
   res.redirect(longURL);
 });
+
+// POST URL MAKING, EDITING AND DELETING
+
+app.post("/urls", (req, res) => {
+  let shortened = helpers.generateRandomString(6);
+  helpers.editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]); //makes new url in database
+  res.redirect(`urls/${shortened}`);
+});
+
+app.post("/urls/:id/delete", (req, res) => { //delete button
+  if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) { //conditional ensures only user can delete their links
+    helpers.deleteItem(urlDatabase, req.params.id);
+  }
+  res.redirect(`/urls`);
+});
+
+app.post("/urls/:id/edit", (req, res) => { //edit button
+  if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {//conditional ensures only user can edit their links
+    helpers.editItem(urlDatabase, req.params.id, req.body.longURL, req.session["user_id"]["id"]);
+  }
+  res.redirect(`/urls/${req.params.id}`);
+});
+
+// GET LOGIN AND REGISTRATION
+app.get("/login", (req, res) => { //login page
+  if (req.session["user_id"]) {
+    res.redirect("urls");
+  } else {
+    const templateVars = { user: req.session["user_id"], error1: null, error2: null };
+    res.render("login_user", templateVars);
+  }
+});
+
+app.get("/register", (req, res) => { //registration page
+  if (req.session["user_id"]) {
+    res.redirect("urls");
+  } else {
+    const templateVars = { user: req.session["user_id"], error1: null, error2: null };
+    res.render("register_user", templateVars);
+  }
+});
+
 
 // DATABASE VIEWER uncomment to see databases from browswer if you are debugging database interactions
 // app.get("/urls-data", (req, res) => {
@@ -96,7 +141,8 @@ app.post(`/login`, (req, res) => {
   const value = (helpers.checkUser("email", req.body["email"], userDatabase)); //will return an object of the user if it exists
   let passwordCheck; //need to set this or else "if (value && passwordCheck)" will fail without else statement intializing ***
   if (!value) {
-    res.status(403).send('Status code 403 - User not registered'); //if user doesnt exist send error
+    const templateVars = { user: req.session["user_id"], error1: true, error2: null };
+    res.render("login_user", templateVars); //if user doesnt exist send error
   } else { // *** this is the else statement the above comment is referring to
     passwordCheck = bcrypt.compareSync(req.body["password"], value["password"]);
   }
@@ -104,22 +150,20 @@ app.post(`/login`, (req, res) => {
     req.session["user_id"] = value;
     res.redirect(`/urls`);
   } else if (value && !passwordCheck) { //if user exists and password is incorrect send error
-    res.status(403).send('Status code 403 - Password');
+    const templateVars = { user: req.session["user_id"], error1: null, error2: true };
+    res.render("login_user", templateVars);
   } else {
-    res.redirect(`/login`); //if
+    res.redirect(`/login`);
   }
-});
-
-app.post(`/logout`, (req, res) => {
-  req.session = null; //reset cookies
-  res.redirect("/login");
 });
 
 app.post(`/register`, (req, res) => {
   if (req.body["email"] === '' || req.body["password"] === '') {
-    res.status(400).send('Status code 400'); //if nothing was given send error
+    const templateVars = { user: req.session["user_id"], error1: true, error2: null };
+    res.render("register_user", templateVars); //if nothing was given send error
   } else if (helpers.checkUser("email", req.body["email"], userDatabase)) {
-    res.status(400).send('Status code 400'); //if user exists send error
+    const templateVars = { user: req.session["user_id"], error1: null, error2: true };
+    res.render("register_user", templateVars); //if user exists send error
   } else {
     const user = helpers.createUser(req.body["email"], bcrypt.hashSync(req.body["password"], 10), userDatabase);
     req.session['user_id'] = user; //if new user and password then register
@@ -127,27 +171,12 @@ app.post(`/register`, (req, res) => {
   }
 });
 
-// POST URL MAKING, EDITING AND DELETING
-
-app.post("/urls", (req, res) => {
-  let shortened = helpers.generateRandomString(6);
-  helpers.editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]); //makes new url in database
-  res.redirect(`urls/${shortened}`);
+app.post(`/logout`, (req, res) => {
+  req.session = null; //reset cookies
+  res.redirect("/urls");
 });
 
-app.post("/urls/:shortURL/delete", (req, res) => { //delete button
-  if (req.session["user_id"]["id"] === urlDatabase[req.params.shortURL]["userID"]) { //conditional ensures only user can delete their links
-    helpers.deleteItem(urlDatabase, req.params.shortURL);
-  }
-  res.redirect(`/urls`);
-});
 
-app.post("/urls/:id/edit", (req, res) => { //edit button
-  if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {//conditional ensures only user can edit their links
-    helpers.editItem(urlDatabase, req.params.id, req.body.longURL, req.session["user_id"]["id"]);
-  }
-  res.redirect(`/urls/${req.params.id}`);
-});
 
 // 404 PAGE bug with, newly generated tinies redirect here rather than to their individual page
 
