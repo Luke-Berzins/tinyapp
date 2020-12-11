@@ -5,6 +5,7 @@ const cookieSession = require('cookie-session');
 const bcrypt = require('bcrypt');
 //helper functions
 const helpers = require('./helpers');
+const { urlsForUser } = require('./helpers');
 
 //SERVER
 const PORT = 8080;
@@ -67,13 +68,15 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  //renders individual show page, redirect to actual website on long link & short link
-  if (urlDatabase[req.params.id] === undefined) {
-    const templateVars = { user: req.session["user_id"] };
-    res.render("404_page", templateVars);
-  } else {
+  if (req.session['user_id'] === undefined) { //prevent a user with no cookies from throwing an error for trying to access id property
+      const templateVars = { user: req.session["user_id"] };
+      res.render("404_page", templateVars);
+    } else if (urlDatabase[req.params.id] && urlDatabase[req.params.id]["userID"] === req.session['user_id']['id']) {
     const templateVars = { user: req.session["user_id"], shortURL: req.params.id, longURL: urlDatabase[req.params.id]};
-    res.render("urls_show", templateVars);
+    res.render("urls_show", templateVars) //check if the user's id matches the song, if it does give them the page
+  } else {
+    const templateVars = { user: req.session["user_id"] };
+    res.render("404_page", templateVars) //if it give 404
   }
 });
 
@@ -125,13 +128,13 @@ app.get("/register", (req, res) => { //registration page
 
 
 // DATABASE VIEWER uncomment to see databases from browswer if you are debugging database interactions
-// app.get("/urls-data", (req, res) => {
-//   res.json(urlDatabase)
-// });
+app.get("/urls-data", (req, res) => {
+  res.json(urlDatabase)
+});
 
-// app.get("/user-data", (req, res) => {
-//   res.json(userDatabase)
-// });
+app.get("/user-data", (req, res) => {
+  res.json(userDatabase)
+});
 
 // APP POSTS
 
