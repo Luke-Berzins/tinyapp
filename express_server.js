@@ -18,9 +18,7 @@ const PORT = 8080;
 
 // EXPRESS APP SETUP AND MIDDLEWARE
 const app = express();
-//setting ejs as the template engine
 app.set("view engine", "ejs");
-//parse incoming request bodies, data available under req.body
 app.use(bodyParser.urlencoded({extended: true}));
 //secure cookies middleware
 app.use(cookieSession({
@@ -29,22 +27,15 @@ app.use(cookieSession({
 }));
 
 //DATABASES
-const userDatabase = { //structure of database
-  // O1qFUflm: { id: 'O1qFUflm', email: 'lukeberzins16@gmail.com', password: 'chocolate_chip' },
-  // cwW921dh: { id: 'cwW921dh', email: 'funky-chicken-234@hotmail.com', password: 'pancakes' }
-};
-
-const urlDatabase = { //structure of database
-  // b6UTxQ: { longURL: "https://www.clubpenguin.ca", userID: "aJ48lW" },
-  // i3BoGr: { longURL: "https://www.clubpenguinPRO.ca", userID: "aJ48lW" }
-};
+const userDatabase = {};
+const urlDatabase = {};
 
 // APP GETS
 app.get("/", (req, res) => {
   if (req.session["user_id"]) {
-    //filter url database to their links
-    const templateVars = { user: req.session["user_id"], urls: urlList };
+    //filter url database to user's links
     const urlList = urlsForUser(req.session["user_id"]["id"], urlDatabase);
+    const templateVars = { user: req.session["user_id"], urls: urlList };
     res.render("urls_index", templateVars);
   } else {
     //if not logged in
@@ -56,13 +47,11 @@ app.get("/", (req, res) => {
 // GET URL PAGES
 app.get("/urls", (req, res) => {
   if (req.session["user_id"]) {
-    //if user is logged in filter url database to their link
+    //login check
     const urlList = urlsForUser(req.session["user_id"]["id"], urlDatabase);
     const templateVars = { user: req.session["user_id"], urls: urlList };
     res.render("urls_index", templateVars);
   } else {
-    //if not logged in
-    //user value affects urls_index rendering, needs to be defined even if null
     const templateVars = { user: null };
     res.render("urls_index", templateVars);
   }
@@ -79,23 +68,17 @@ app.get("/urls/new", (req, res) => {
 });
 
 app.get("/urls/:id", (req, res) => {
-  //prevent a user with no cookies from throwing an error for trying to access id property
-  if (req.session['user_id'] === undefined) {
+  //if user id is undefined or if the user id does not match the urls owner
+  if (req.session['user_id'] === undefined || urlDatabase[req.params.id]["userID"] !== req.session['user_id']['id']) {
     const templateVars = { user: req.session["user_id"] };
     res.render("404_page", templateVars);
-  //check if the user's id matches the song, if it does give them the page
-  } else if (urlDatabase[req.params.id] && urlDatabase[req.params.id]["userID"] === req.session['user_id']['id']) {
+  } else {
     const templateVars = { user: req.session["user_id"], shortURL: req.params.id, longURL: urlDatabase[req.params.id]};
     res.render("urls_show", templateVars);
-  } else {
-  //if it doesnt give 404
-    const templateVars = { user: req.session["user_id"] };
-    res.render("404_page", templateVars);
   }
 });
 
 app.get("/u/:id", (req, res) => {
-  //if it doesnt exist give 404
   if (urlDatabase[req.params.id] === undefined) {
     const templateVars = { user: req.session["user_id"] };
     res.render("404_page", templateVars);
@@ -112,11 +95,11 @@ app.post("/urls", (req, res) => {
   //makes new url in database
   let shortened = generateRandomString(6);
   editItem(urlDatabase, shortened, req.body.longURL, req.session["user_id"]["id"]);
+  console.log("urlsdata", urlDatabase);
   res.redirect(`urls/${shortened}`);
 });
 
 app.post("/urls/:id/delete", (req, res) => {
-  //delete button
   if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {
   //conditional ensures only user can delete their links
     deleteItem(urlDatabase, req.params.id);
@@ -125,9 +108,7 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 app.post("/urls/:id/edit", (req, res) => {
-  //edit button
   if (req.session["user_id"]["id"] === urlDatabase[req.params.id]["userID"]) {
-  //conditional ensures only user can edit their links
     editItem(urlDatabase, req.params.id, req.body.longURL, req.session["user_id"]["id"]);
   }
   res.redirect(`/urls/${req.params.id}`);
@@ -201,7 +182,6 @@ app.post(`/logout`, (req, res) => {
   req.session = null;
   res.redirect("/urls");
 });
-
 
 // SERVER LISTEN
 app.listen(PORT, () => {
