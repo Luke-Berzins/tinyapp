@@ -28,6 +28,12 @@
         </div>
       </form>
     </main>
+ <% if(error1){ %>
+      <button type="button" class="btn btn-outline-info btn-block" disabled>Form empty</button>
+    <% }
+    if (error2) { %> 
+      <button type="button" class="btn btn-outline-info btn-block" disabled>User already exists</button>
+    <% } %>
 
 
 

@@ -28,8 +28,12 @@
         </div>
       </form>
     </main>
-
-
+  <% if(error1){ %>
+       <button type="button" class="btn btn-outline-info btn-block" disabled>No user under that address</button>
+    <% }
+       if (error2) { %> 
+       <button type="button" class="btn btn-outline-info btn-block" disabled>Incorrect Password</button>
+     <% } %>
 
       <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
